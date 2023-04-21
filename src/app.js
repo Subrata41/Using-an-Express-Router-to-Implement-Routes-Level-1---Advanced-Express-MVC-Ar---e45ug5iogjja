@@ -5,6 +5,7 @@ const app = express();
 
 //middleware
 //write router middleware here
+router.use(express.json());
 
 //Including product.json file
 const product = JSON.parse(
