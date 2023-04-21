@@ -1,53 +1,57 @@
-const fs = require('fs');
 const express = require('express');
-const app = express();
 const router = express.Router();
+const fs = require('fs');
+const path = require('path');
 
-// Including product.json file
-const product = JSON.parse(
-  fs.readFileSync(`${__dirname}/../dev-data/product.json`)
-);
+const productDataPath = path.join(__dirname, '../dev-data/product.json');
 
-// Define middleware
-router.use(express.json());
-
-// Get all the products
-router.get('/api/v1/product', (req, res) => {
+router.get('/api/v1/products', (req, res) => {
   try {
+    const products = JSON.parse(fs.readFileSync(productDataPath, 'utf-8'));
     res.status(200).json({
       status: 'success',
-      results: product.length,
+      results: products.length,
       data: {
-        product,
-      },
+        products
+      }
     });
-  } catch (error) {
-    res.status(400).json({ status: 'error', message: 'Error getting products' });
+  } catch (err) {
+    res.status(500).json({
+      status: 'error',
+      message: err.message
+    });
   }
 });
 
-// Create a new Product
-router.post('/api/v1/product', (req, res) => {
+router.post('/api/v1/products', (req, res) => {
   try {
+    const { title, price } = req.body;
+    if (!title || !price) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Product name and price are required'
+      });
+    }
+    const products = JSON.parse(fs.readFileSync(productDataPath, 'utf-8'));
     const newProduct = {
-      id: product.length + 1,
-      title: req.body.title,
-      price: req.body.price,
+      id: products.length + 1,
+      title,
+      price
     };
-    product.push(newProduct);
-    fs.writeFile(`${__dirname}/../dev-data/product.json`, JSON.stringify(product), () => {});
+    products.push(newProduct);
+    fs.writeFileSync(productDataPath, JSON.stringify(products));
     res.status(201).json({
       status: 'success',
       data: {
-        product: newProduct,
-      },
+        product: newProduct
+      }
     });
-  } catch (error) {
-    res.status(400).json({ status: 'error', message: 'Error creating product' });
+  } catch (err) {
+    res.status(500).json({
+      status: 'error',
+      message: err.message
+    });
   }
 });
 
-// Registering our Router
-app.use('/', router);
-
-module.exports = app;
+module.exports = router;
