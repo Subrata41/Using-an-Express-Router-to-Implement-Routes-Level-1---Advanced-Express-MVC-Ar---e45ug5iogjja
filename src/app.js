@@ -1,57 +1,69 @@
-const express = require('express');
-const router = express.Router();
 const fs = require('fs');
-const path = require('path');
+const express = require('express');
+const app = express();
+//Aim: With the help of router, get all the product with router.GET request and create a product with router.POST request
 
-const productDataPath = path.join(__dirname, '../dev-data/product.json');
+//middleware
+app.use(express.json());
 
-router.get('/api/v1/products', (req, res) => {
-  try {
-    const products = JSON.parse(fs.readFileSync(productDataPath, 'utf-8'));
-    res.status(200).json({
-      status: 'success',
-      results: products.length,
-      data: {
-        products
-      }
-    });
-  } catch (err) {
-    res.status(500).json({
-      status: 'error',
-      message: err.message
-    });
-  }
+//write router middleware here
+const router = express.Router();
+app.use(router);
+
+//Including product.json file
+const product = JSON.parse(
+	fs.readFileSync(`${__dirname}/../dev-data/product.json`)
+);
+
+// Defining The Router
+// Get all the products
+router.get('/api/v1/product', (req, res) => {
+	try {
+		//Write your code here
+		res.status(200).json({
+			status: 'success',
+			results: product.length,
+			data: { product },
+		});
+	} catch (error) {
+		res.status(400).json(error);
+	}
 });
 
-router.post('/api/v1/products', (req, res) => {
-  try {
-    const { title, price } = req.body;
-    if (!title || !price) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Product name and price are required'
-      });
-    }
-    const products = JSON.parse(fs.readFileSync(productDataPath, 'utf-8'));
-    const newProduct = {
-      id: products.length + 1,
-      title,
-      price
-    };
-    products.push(newProduct);
-    fs.writeFileSync(productDataPath, JSON.stringify(products));
-    res.status(201).json({
-      status: 'success',
-      data: {
-        product: newProduct
-      }
-    });
-  } catch (err) {
-    res.status(500).json({
-      status: 'error',
-      message: err.message
-    });
-  }
+//Create a new Product
+router.post('/api/v1/product', (req, res) => {
+	try {
+		//Write your code here
+		const newProduct = req.body;
+		if (!newProduct.title || !newProduct.price) {
+			return res.status(404).json({
+				status: 'Error',
+				message: 'Title and price are required',
+			});
+		}
+		const id = product[product.length - 1].id + 1;
+		newProduct.id = id;
+		const products = [...product, newProduct];
+		console.log(products);
+		fs.writeFileSync(
+			`${__dirname}/../dev-data/product.json`,
+			JSON.stringify(products)
+		);
+		res.status(201).json({
+			status: 'success',
+			data: {
+				product: newProduct,
+			},
+		});
+	} catch (error) {
+		res.status(400).json({
+			message: 'Error creating product',
+			status: 'Error',
+		});
+	}
 });
 
-module.exports = router;
+//Registering our Router
+//Write here to register router
+
+module.exports = app;
